@@ -23,6 +23,13 @@
 void add_circle( struct matrix * points, 
 		 double cx, double cy, 
 		 double r, double step ) {
+
+  double p, s;
+  s = 1.0/step;
+
+  for( p = 0; p < 1; p += s) {
+    add_edge( points, r * cos(p*M_PI*2) + cx, r * sin(p*M_PI*2) + cy, 0, r * cos(2*M_PI*(p + s)) + cx, r * sin(2*M_PI*(p + s)) + cy, 0);
+  }
 }
 
 /*======== void add_curve() ==========
@@ -52,6 +59,34 @@ void add_curve( struct matrix *points,
 		double x2, double y2, 
 		double x3, double y3, 
 		double step, int type ) {
+
+  struct matrix* X;
+  struct matrix* Y;
+
+  if( BEZIER_MODE ) {
+    X = generate_curve_coefs(x0, x1, x2, x3, type);
+    Y = generate_curve_coefs(y0, y1, y2, y3, type);
+  }
+  else if( HERMITE_MODE ) {
+    X = generate_curve_coefs(x0, x2, x1-x0, x2-x3, type);
+    Y = generate_curve_coefs(y0, y2, y1-y0, y2-y3, type);
+  }
+  
+  int X0, X1, Y0, Y1;
+  double t = 0;
+
+  X0 = x0;
+  Y0 = y0;
+
+  while( t < 1.001 ) {
+    X1 = t * ( t * (X->m[0][0] * t + X->m[1][0]) + X->m[2][0]) + X->m[3][0];
+    Y1 = t * ( t * (Y->m[0][0] * t + Y->m[1][0]) + Y->m[2][0]) + Y->m[3][0];
+    add_edge( points, X0, Y0, 0, X1, Y1, 0);
+    X0 = X1;
+    Y0 = Y1;
+
+    t += step;
+  }
 }
 
 /*======== void add_point() ==========
